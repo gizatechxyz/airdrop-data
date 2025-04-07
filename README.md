@@ -2,11 +2,13 @@
 
 ## Overview
 
-This repository contains scripts to process and calculate token allocations for airdrop campaigns across multiple platforms. The script processes data from three different sources:
+This repository contains scripts to process and calculate token allocations for airdrop campaigns across multiple platforms. The script processes data from five different sources:
 
 1. **ARMA Campaign** - 15,000,000 tokens (1.5% of total supply)
 2. **Layer3 Campaign** - 2,500,000 tokens (0.25% of total supply)
-3. **Galxe Campaign** - 5,000,000 tokens (0.5% of total supply)
+3. **Galxe Campaign** - 2,500,000 tokens (0.25% of total supply)
+4. **Megaphone Campaign** - 2,500,000 tokens (0.25% of total supply)
+5. **Marketing Campaign** - Variable allocation based on participation tiers
 
 The purpose of this codebase is to transform raw participation data into fair token allocations using different distribution methodologies tailored to each campaign's objectives.
 
@@ -24,8 +26,27 @@ The purpose of this codebase is to transform raw participation data into fair to
 
 ### Galxe Campaign
 - Similar to ARMA, uses a square root transformation on points
+- Filters for participants with at least 150 points
 - Proportionally distributes tokens based on transformed points
 - Balances reward for participation while reducing extreme concentration
+
+### Megaphone Campaign
+- Uses a square root transformation on points
+- Filters for participants with at least 200 points
+- Proportionally distributes tokens based on transformed points
+
+### Marketing Campaign
+- Two-tier allocation system:
+  - 1,200 tokens for participants with 100+ points
+  - 2,400 tokens for participants with 300+ points
+- Only participants who exist in the ARMA data are eligible
+
+## Data Processing Features
+
+- **Checksum Address Handling**: All Ethereum addresses are converted to checksum format for consistency and validation
+- **Duplicate Detection**: Identifies and handles duplicate addresses in each campaign
+- **Data Validation**: Ensures data integrity through various checks and transformations
+- **Transparent Reporting**: Displays token totals and duplicate addresses for verification
 
 ## Directory Structure
 
@@ -34,11 +55,15 @@ The purpose of this codebase is to transform raw participation data into fair to
 ├── data/                  # Input data files
 │   ├── arma_leaderboard.csv
 │   ├── layer3_campaign.csv
-│   └── galxe_campaign.csv
+│   ├── galxe_campaign.csv
+│   ├── megaphone_campaign.csv
+│   └── marketing_campaign.csv
 ├── processed/             # Output allocation files
 │   ├── arma_allocations.csv
 │   ├── layer3_allocations.csv
 │   ├── galxe_allocations.csv
+│   ├── megaphone_allocations.csv
+│   ├── marketing_allocations.csv
 │   └── total_allocations.csv
 ├── process_data.py        # Main processing script
 ├── merge_data.py          # Script to combine all allocations
@@ -52,6 +77,7 @@ The purpose of this codebase is to transform raw participation data into fair to
 - Python 3.13 or higher (as specified in pyproject.toml)
 - pandas 2.2.3 or higher
 - numpy (used in the scripts)
+- web3 (for Ethereum address handling)
 - uv (Python package manager)
 
 ## Installation
@@ -81,6 +107,8 @@ The purpose of this codebase is to transform raw participation data into fair to
    - `arma_leaderboard.csv`
    - `layer3_campaign.csv`
    - `galxe_campaign.csv`
+   - `megaphone_campaign.csv`
+   - `marketing_campaign.csv`
 
 2. Run the processing script using `uv`:
    ```bash
@@ -91,6 +119,13 @@ The purpose of this codebase is to transform raw participation data into fair to
    - `arma_allocations.csv`
    - `layer3_allocations.csv`
    - `galxe_allocations.csv`
+   - `megaphone_allocations.csv`
+   - `marketing_allocations.csv`
+
+4. The script will display:
+   - Total tokens allocated for each campaign
+   - Any duplicate addresses found (if any)
+   - Processing status and completion
 
 ### Merging Allocations
 
