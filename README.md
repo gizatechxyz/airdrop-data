@@ -4,42 +4,61 @@
 
 This repository contains scripts to process and calculate token allocations for airdrop campaigns across multiple platforms. The script processes data from five different sources:
 
-1. **ARMA Campaign** - 15,000,000 tokens (1.5% of total supply)
-2. **Layer3 Campaign** - 2,500,000 tokens (0.25% of total supply)
-3. **Galxe Campaign** - 2,500,000 tokens (0.25% of total supply)
-4. **Megaphone Campaign** - 2,500,000 tokens (0.25% of total supply)
-5. **Marketing Campaign** - Variable allocation based on participation tiers
+1. **ARMA Campaign** - Tier-based allocation system
+2. **Layer3 Campaign** - Fixed allocation of 180 tokens per participant 
+3. **Galxe Campaign** - Fixed allocation of 180 tokens per participant
+4. **Megaphone Campaign** - Fixed allocation of 180 tokens per participant
+5. **Community Campaign** - Fixed allocation of 385 tokens for specific participants
+6. **Discord Role** - Added in the merging process
 
 The purpose of this codebase is to transform raw participation data into fair token allocations using different distribution methodologies tailored to each campaign's objectives.
 
 ## Methodology
 
 ### ARMA Campaign
-- Uses a square root transformation on points to reduce the gap between high and low performers
-- Allocates tokens proportionally based on transformed points
-- This approach rewards higher participation while preventing excessive concentration
+- Uses a tier-based allocation system
+- Filters out entries with less than 60 points
+- Allocates tokens based on points tiers:
+  - 60-100 points: 180 tokens
+  - 100-250 points: 385 tokens
+  - 250-500 points: 1150 tokens
+  - 500-1000 points: 1715 tokens
+  - 1000-2000 points: 2850 tokens
+  - 2000-5000 points: 5700 tokens
+  - 5000-10000 points: 11430 tokens
+  - 10000-25000 points: 17000 tokens
+  - 25000-50000 points: 25000 tokens
+  - 50000-100000 points: 52500 tokens
+  - 100000+ points: 85000 tokens
 
 ### Layer3 Campaign
 - Implements an equal distribution model
-- All qualifying participants receive the same allocation
+- All qualifying participants receive a fixed allocation of 180 tokens
 - Focuses on rewarding participation itself rather than relative performance
 
 ### Galxe Campaign
-- Similar to ARMA, uses a square root transformation on points
-- Filters for participants with at least 150 points
-- Proportionally distributes tokens based on transformed points
-- Balances reward for participation while reducing extreme concentration
+- Equal distribution among qualifying participants
+- Filters for participants with at least 160 points
+- Each participant receives a fixed amount of 180 tokens
+- Removes duplicates and standardizes data format
 
 ### Megaphone Campaign
-- Uses a square root transformation on points
-- Filters for participants with at least 200 points
-- Proportionally distributes tokens based on transformed points
+- Equal distribution among qualifying participants (180 tokens each)
+- Processes referral points by:
+  1. Subtracting referral points from total points
+  2. Capping referral points at 100
+  3. Adding back the capped referral points to total points
+- Filters for participants with more than 205 points
 
-### Marketing Campaign
-- Two-tier allocation system:
-  - 1,200 tokens for participants with 100+ points
-  - 2,400 tokens for participants with 300+ points
-- Only participants who exist in the ARMA data are eligible
+### Community Campaign
+- Only considers participants from the Feedback sprint, not the oasis gathering
+- Filters for participants who exist in the ARMA data
+- Filters for participants with at least 100 points
+- Allocates 385 tokens for participants with exactly 300 points
+
+### Discord Role
+- Added during the merge process
+- Processed in merge_data.py and included in the final allocation
 
 ## Data Processing Features
 
@@ -47,6 +66,7 @@ The purpose of this codebase is to transform raw participation data into fair to
 - **Duplicate Detection**: Identifies and handles duplicate addresses in each campaign
 - **Data Validation**: Ensures data integrity through various checks and transformations
 - **Transparent Reporting**: Displays token totals and duplicate addresses for verification
+- **Eligibility Mapping**: Creates a JSON mapping of addresses to their eligibility status across categories
 
 ## Directory Structure
 
@@ -57,14 +77,16 @@ The purpose of this codebase is to transform raw participation data into fair to
 │   ├── layer3_campaign.csv
 │   ├── galxe_campaign.csv
 │   ├── megaphone_campaign.csv
-│   └── marketing_campaign.csv
+│   └── community_campaign.csv
 ├── processed/             # Output allocation files
 │   ├── arma_allocations.csv
 │   ├── layer3_allocations.csv
 │   ├── galxe_allocations.csv
 │   ├── megaphone_allocations.csv
-│   ├── marketing_allocations.csv
-│   └── total_allocations.csv
+│   ├── community_allocations.csv
+│   ├── discord_role.csv
+│   ├── total_allocations.csv
+│   └── eligibility.json
 ├── process_data.py        # Main processing script
 ├── merge_data.py          # Script to combine all allocations
 ├── pyproject.toml         # Python project dependencies
@@ -78,6 +100,8 @@ The purpose of this codebase is to transform raw participation data into fair to
 - pandas 2.2.3 or higher
 - numpy (used in the scripts)
 - web3 (for Ethereum address handling)
+- eth-utils (for Ethereum address handling)
+- matplotlib (for potential visualization)
 - uv (Python package manager)
 
 ## Installation
@@ -108,7 +132,7 @@ The purpose of this codebase is to transform raw participation data into fair to
    - `layer3_campaign.csv`
    - `galxe_campaign.csv`
    - `megaphone_campaign.csv`
-   - `marketing_campaign.csv`
+   - `community_campaign.csv`
 
 2. Run the processing script using `uv`:
    ```bash
@@ -120,7 +144,7 @@ The purpose of this codebase is to transform raw participation data into fair to
    - `layer3_allocations.csv`
    - `galxe_allocations.csv`
    - `megaphone_allocations.csv`
-   - `marketing_allocations.csv`
+   - `community_allocations.csv`
 
 4. The script will display:
    - Total tokens allocated for each campaign
@@ -131,11 +155,14 @@ The purpose of this codebase is to transform raw participation data into fair to
 
 After processing the individual campaign data, you can merge the allocations into a single comprehensive file:
 
-1. Run the merge script using `uv`:
+1. Ensure you have the `discord_role.csv` file in the `processed/` directory.
+
+2. Run the merge script using `uv`:
    ```bash
    uv run merge_data.py
    ```
 
-2. This will create a consolidated file in the `processed/` directory:
-   - `total_allocations.csv`
+3. This will create consolidated files in the `processed/` directory:
+   - `total_allocations.csv` - Combined allocations from all campaigns
+   - `eligibility.json` - Mapping of addresses to their eligibility status
 
