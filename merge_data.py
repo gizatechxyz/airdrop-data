@@ -39,10 +39,6 @@ def main():
     df_discord = pd.read_csv(DISCORD_OUTPUT_FILE)
     df_megaphone = pd.read_csv(MEGAPHONE_OUTPUT_FILE)
 
-    # Standardize column names (Galxe file has lowercase 'token')
-    if "token" in df_galxe.columns:
-        df_galxe = df_galxe.rename(columns={"token": "Token"})
-
     # Ensure all dataframes have only Address and Token columns
     df_arma = df_arma[["Address", "Token"]]
     df_layer3 = df_layer3[["Address", "Token"]]
