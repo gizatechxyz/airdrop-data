@@ -4,20 +4,37 @@
 
 This repository contains scripts to process and calculate token allocations for airdrop campaigns across multiple platforms. The script processes data from five different sources:
 
-1. **ARMA Campaign** - Tier-based allocation system
-2. **Layer3 Campaign** - Fixed allocation of 180 tokens per participant 
-3. **Galxe Campaign** - Fixed allocation of 180 tokens per participant
-4. **Megaphone Campaign** - Fixed allocation of 180 tokens per participant
-5. **Community Campaign** - Fixed allocation of 385 tokens for specific participants
-6. **Discord Role** - Added in the merging process
+1. **ARMA Campaign** - Tier-based allocation system based on points reflecting on-chain activity.
+2. **Layer3 Campaign** - Fixed allocation for completing specific quests.
+3. **Galxe Campaign** - Fixed allocation for achieving a minimum point threshold.
+4. **Megaphone Campaign** - Fixed allocation for social engagement, with referral point capping.
+5. **Community Campaign** - Specific allocation for community feedback participants also active on-chain.
+6. **Discord Role** - Added in the merging process (source data required separately).
 
-The purpose of this codebase is to transform raw participation data into fair token allocations using different distribution methodologies tailored to each campaign's objectives.
+The primary goal of this codebase is to transform raw participation data into fair token allocations, applying various filters and methodologies tailored to each campaign's objectives. A key focus is on **Sybil resistance** – ensuring that allocations primarily reward genuine, active participants rather than potentially automated or low-effort accounts.
+
+## Token Allocation Framework
+
+The total supply for this token distribution is **1,000,000,000** tokens.
+The allocation is structured to reward different types of engagement and contribution within the ecosystem:
+
+*   **On-chain Activity (ARMA Campaign):** A significant portion is allocated based on demonstrable on-chain activity and interaction, measured via the ARMA point system. This rewards users actively using the platform.
+*   **Social Engagement Campaigns (Layer3, Galxe, Megaphone):** A fixed amount (180 tokens per participant per campaign, subject to specific campaign filters) is dedicated to rewarding participation in social and quest-based campaigns across various platforms. This encourages broader community growth and awareness.
+*   **Community Contributions (Community Campaign, Discord Roles):** Specific allocations are reserved for rewarding direct community involvement, such as providing feedback (Community Campaign) or holding designated roles (Discord). This values qualitative contributions and sustained community presence.
+
+The precise token amounts distributed via each campaign are determined by the filtering logic and participation numbers detailed in the Methodology section below. The `merge_data.py` script provides a final summary of the tokens distributed across these categories relative to the total supply.
 
 ## Methodology
 
-### ARMA Campaign
+The following sections detail the specific processing steps and filtering logic applied to each campaign's raw data within `process_data.py`. These steps are designed to clean the data, identify eligible participants based on defined criteria, and mitigate the impact of potential Sybil behavior.
+
+### ARMA Campaign (`calculate_arma_allocations`)
 - Uses a tier-based allocation system
 - Filters out entries with less than 60 points
+- Allocates tokens based on points tiers reflecting on-chain activity levels.
+- **Filtering:**
+  - **Points Threshold:** Entries with less than 60 points are removed. This establishes a minimum baseline of on-chain activity required for eligibility.
+  - **Duplicate Removal:** Duplicate wallet addresses are removed, keeping only the first occurrence. This prevents single entities from receiving multiple allocations from this campaign via the same address.
 - Allocates tokens based on points tiers:
   - 60-100 points: 180 tokens
   - 100-250 points: 385 tokens
@@ -31,34 +48,52 @@ The purpose of this codebase is to transform raw participation data into fair to
   - 50000-100000 points: 52500 tokens
   - 100000+ points: 85000 tokens
 
-### Layer3 Campaign
-- Implements an equal distribution model
-- All qualifying participants receive a fixed allocation of 180 tokens
-- Focuses on rewarding participation itself rather than relative performance
+### Layer3 Campaign (`calculate_layer3_allocations`)
+- Rewards completion of specific quests with a fixed allocation.
+- **Filtering:**
+  - **Cross-Campaign Check (ARMA):** Only participants whose addresses are *also* present in the ARMA leaderboard data are considered eligible. This acts as a Sybil filter, requiring participants to have demonstrated some level of on-chain activity in addition to completing Layer3 quests.
+  - **Duplicate Removal:** Duplicate wallet addresses are removed, keeping the first occurrence.
+- **Allocation:** Qualifying participants receive a fixed amount of 180 tokens.
 
-### Galxe Campaign
-- Equal distribution among qualifying participants
-- Filters for participants with at least 160 points
-- Each participant receives a fixed amount of 180 tokens
-- Removes duplicates and standardizes data format
+### Galxe Campaign (`calculate_galxe_allocations`)
+- Rewards participation based on achieving a points threshold.
+- **Filtering:**
+  - **Duplicate Removal:** Duplicate wallet addresses are removed, keeping the first occurrence.
+  - **Points Threshold:** Participants must have accumulated at least 160 points in the Galxe campaign. This sets a minimum engagement level.
+- **Allocation:** Qualifying participants receive a fixed amount of 180 tokens.
 
-### Megaphone Campaign
-- Equal distribution among qualifying participants (180 tokens each)
-- Processes referral points by:
-  1. Subtracting referral points from total points
-  2. Capping referral points at 100
-  3. Adding back the capped referral points to total points
-- Filters for participants with more than 205 points
+### Megaphone Campaign (`calculate_megaphone_allocations`)
+- Rewards social engagement with adjustments for referral activity.
+- **Filtering & Point Adjustment:**
+  - **NaN Address Removal:** Entries without a valid wallet address are dropped.
+  - **Duplicate Removal:** Duplicate wallet addresses are removed, keeping the first occurrence.
+  - **Referral Point Capping:** To prevent excessive rewards solely from referrals (a potential Sybil vector), referral points are capped at 100 before being added back to the participant's base points.
+    1. `totalPoints` = `totalPoints` - `referralPoints`
+    2. `referralPoints` = min(`referralPoints`, 100)
+    3. `totalPoints` = `totalPoints` + `referralPoints` (capped)
+  - **Points Threshold:** Participants must have a final `totalPoints` (after referral capping) greater than 205 to qualify.
+- **Allocation:** Qualifying participants receive a fixed amount of 180 tokens.
 
-### Community Campaign
-- Only considers participants from the Feedback sprint, not the oasis gathering
-- Filters for participants who exist in the ARMA data
-- Filters for participants with at least 100 points
-- Allocates 385 tokens for participants with exactly 300 points
+### Community Campaign (`calculate_community_allocations`)
+- Rewards specific community contributions (Feedback sprint) from participants also active on-chain.
+- **Filtering:**
+  - **Cross-Campaign Check (ARMA):** Only participants whose addresses are *also* present in the ARMA leaderboard data are considered eligible. This links community contribution to on-chain activity.
+  - **Points Threshold:** Participants must have accumulated at least 100 points in the community campaign.
+- **Allocation:** Only participants meeting the above criteria *and* having exactly 300 points receive a fixed allocation of 385 tokens. Others meeting the filter criteria receive 0 from this specific campaign.
 
 ### Discord Role
-- Added during the merge process
-- Processed in merge_data.py and included in the final allocation
+- Data for Discord role holders (address and allocation amount, typically fixed) needs to be provided separately in `./processed/discord_role.csv` before running the merge script.
+- This data is directly incorporated during the merge step.
+
+### Data Merging and Finalization (`merge_data.py`)
+After processing individual campaigns, `merge_data.py` consolidates all allocations:
+- **Aggregation:** It reads the individual `_allocations.csv` files (and `discord_role.csv`) from the `processed/` directory.
+- **Outer Join:** Performs an outer merge on the wallet addresses. This ensures that *all* unique addresses across *all* campaigns are included in the final `total_allocations.csv` file.
+- **Handling Non-Participation:** Uses `fillna(0)` to replace any `NaN` values that result from the outer join. This means if an address participated in Campaign A but not Campaign B, it will have its allocation from Campaign A and 0 for Campaign B in the final table.
+- **Total Calculation:** Sums the allocations from all campaigns for each address into a `Total` column.
+- **Output Files:**
+  - `total_allocations.csv`: The main output file showing the breakdown per campaign and the total allocation for every unique participating address.
+  - `eligibility.json`: A helper file mapping each address to boolean flags indicating whether they qualified for allocations under the broad categories of ARMA, Socials (Layer3, Galxe, Megaphone), and Community (Community campaign, Discord).
 
 ## Data Processing Features
 
