@@ -39,63 +39,63 @@ def main():
     df_discord = pd.read_csv(DISCORD_OUTPUT_FILE)
     df_megaphone = pd.read_csv(MEGAPHONE_OUTPUT_FILE)
 
-    # Ensure all dataframes have only Address and Token columns
-    df_arma = df_arma[["Address", "Token"]]
-    df_layer3 = df_layer3[["Address", "Token"]]
-    df_galxe = df_galxe[["Address", "Token"]]
-    df_community = df_community[["Address", "Token"]]
-    df_discord = df_discord[["Address", "Token"]]
-    df_megaphone = df_megaphone[["Address", "Token"]]
+    # Create a new approach using a dictionary to store allocations by address
+    all_addresses = set()
 
-    # Merge dataframes on Address
-    # First, merge ARMA with Layer3 using outer join to include all addresses from both
-    merged_df = pd.merge(
-        df_arma, df_layer3, on="Address", how="outer", suffixes=("_arma", "_layer3")
-    )
+    # Collect all unique addresses
+    all_addresses.update(df_arma["Address"].unique())
+    all_addresses.update(df_layer3["Address"].unique())
+    all_addresses.update(df_galxe["Address"].unique())
+    all_addresses.update(df_community["Address"].unique())
+    all_addresses.update(df_discord["Address"].unique())
+    all_addresses.update(df_megaphone["Address"].unique())
 
-    # Then merge with Galxe, again using outer join to include all addresses
-    merged_df = pd.merge(
-        merged_df, df_galxe, on="Address", how="outer", suffixes=("", "_galxe")
-    )
+    print(f"Total unique addresses: {len(all_addresses)}")
 
-    # Merge with Marketing
-    merged_df = pd.merge(
-        merged_df, df_community, on="Address", how="outer", suffixes=("", "_community")
-    )
-
-    # Merge with Discord
-    merged_df = pd.merge(
-        merged_df, df_discord, on="Address", how="outer", suffixes=("", "_discord")
-    )
-
-    # Merge with Megaphone
-    merged_df = pd.merge(
-        merged_df, df_megaphone, on="Address", how="outer", suffixes=("", "_megaphone")
-    )
-
-    # Replace NaN values with 0 (addresses that didn't participate in a particular campaign)
-    merged_df = merged_df.fillna(0)
-
-    # Add a Total column that sums the tokens from all sources
-    merged_df["Total"] = (
-        merged_df["Token_arma"]
-        + merged_df["Token_layer3"]
-        + merged_df["Token"]
-        + merged_df["Token_community"]
-        + merged_df["Token_discord"]
-        + merged_df["Token_megaphone"]
-    )
-
-    # Rename columns for clarity
-    merged_df = merged_df.rename(
-        columns={
-            "Token_arma": "ARMA",
-            "Token_layer3": "Layer3",
-            "Token": "Galxe",
-            "Token_community": "Community",
-            "Token_discord": "Discord",
-            "Token_megaphone": "Megaphone",
+    # Create a dictionary to map addresses to their allocations
+    allocations = {
+        address: {
+            "ARMA": 0,
+            "Layer3": 0,
+            "Galxe": 0,
+            "Community": 0,
+            "Discord": 0,
+            "Megaphone": 0,
         }
+        for address in all_addresses
+    }
+
+    # Fill in the allocations for each campaign
+    for address, token in zip(df_arma["Address"], df_arma["Token"]):
+        allocations[address]["ARMA"] = token
+
+    for address, token in zip(df_layer3["Address"], df_layer3["Token"]):
+        allocations[address]["Layer3"] = token
+
+    for address, token in zip(df_galxe["Address"], df_galxe["Token"]):
+        allocations[address]["Galxe"] = token
+
+    for address, token in zip(df_community["Address"], df_community["Token"]):
+        allocations[address]["Community"] = token
+
+    for address, token in zip(df_discord["Address"], df_discord["Token"]):
+        allocations[address]["Discord"] = token
+
+    for address, token in zip(df_megaphone["Address"], df_megaphone["Token"]):
+        allocations[address]["Megaphone"] = token
+
+    # Convert the dictionary to a DataFrame
+    merged_df = pd.DataFrame.from_dict(allocations, orient="index").reset_index()
+    merged_df.rename(columns={"index": "Address"}, inplace=True)
+
+    # Add a Total column
+    merged_df["Total"] = (
+        merged_df["ARMA"]
+        + merged_df["Layer3"]
+        + merged_df["Galxe"]
+        + merged_df["Community"]
+        + merged_df["Discord"]
+        + merged_df["Megaphone"]
     )
 
     # Rearrange columns for better readability
