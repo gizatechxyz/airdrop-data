@@ -15,7 +15,7 @@ The primary goal of this codebase is to transform raw participation data into fa
 
 ## Token Allocation Framework
 
-The total supply for this token distribution is **1,000,000,000** tokens.
+The total supply for this token distribution is **13,850,190** tokens.
 The allocation is structured to reward different types of engagement and contribution within the ecosystem:
 
 *   **On-chain Activity (ARMA Campaign):** A significant portion is allocated based on demonstrable on-chain activity and interaction, measured via the ARMA point system. This rewards users actively using the platform.
