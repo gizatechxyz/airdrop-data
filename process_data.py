@@ -8,6 +8,7 @@ COMMUNITY_FILE = "./data/community_campaign.csv"
 LAYER3_FILE = "./data/layer3_campaign.csv"
 GALXE_FILE = "./data/galxe_campaign.csv"
 MEGAPHONE_CAMPAIGN_FILE = "./data/megaphone_campaign.csv"
+DISCORD_FILE = "./processed/discord_role.csv"
 
 # Output allocation files
 ARMA_OUTPUT_FILE = "./processed/arma_allocations.csv"
@@ -15,6 +16,7 @@ LAYER3_OUTPUT_FILE = "./processed/layer3_allocations.csv"
 GALXE_OUTPUT_FILE = "./processed/galxe_allocations.csv"
 MEGAPHONE_OUTPUT_FILE = "./processed/megaphone_allocations.csv"
 COMMUNITY_OUTPUT_FILE = "./processed/community_allocations.csv"
+DISCORD_OUTPUT_FILE = "./processed/discord_role.csv"
 
 TOTAL_SUPPLY = 1_000_000_000
 SOCIALS_ALLOCATION = 180  # Fixed allocation for social campaigns
@@ -358,6 +360,16 @@ def calculate_megaphone_allocations():
     df.to_csv(MEGAPHONE_OUTPUT_FILE, index=False)
 
 
+def checksum_discord_roles():
+    """
+    Checksum addresses in the Discord role CSV file.
+    """
+    print("--- Checksuming Discord Roles ---")
+    df = pd.read_csv(DISCORD_FILE)
+    df["Address"] = df["Address"].apply(lambda x: Web3.to_checksum_address(x))
+    df.to_csv(DISCORD_OUTPUT_FILE, index=False)
+
+
 def main():
     """
     Main execution function that processes all five campaign allocations.
@@ -367,6 +379,7 @@ def main():
     calculate_galxe_allocations()
     calculate_megaphone_allocations()
     calculate_community_allocations()
+    checksum_discord_roles()
 
 
 if __name__ == "__main__":

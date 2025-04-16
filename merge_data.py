@@ -12,6 +12,7 @@ MEGAPHONE_OUTPUT_FILE = "./processed/megaphone_allocations.csv"
 
 # Merged output file
 TOTAL_OUTPUT_FILE = "./processed/total_allocations.csv"
+MERKLE_OUTPUT_FILE = "./processed/total_allocations_for_merkle.csv"
 ELIGIBILITY_OUTPUT_FILE = "./processed/eligibility.json"
 
 TOTAL_SUPPLY = 1_000_000_000
@@ -114,6 +115,16 @@ def main():
 
     # Save the merged dataframe to a new CSV file
     merged_df.to_csv(TOTAL_OUTPUT_FILE, index=False)
+
+    # Create a simplified version for merkle tree with only Address and Total columns, no header
+    merkle_df = merged_df[["Address", "Total"]].copy()
+    # Multiply Total by 1e18 with exact precision
+    merkle_df["Total"] = merkle_df["Total"].apply(
+        lambda x: f"{int(x)}000000000000000000"
+    )
+
+    # Write to CSV without headers
+    merkle_df.to_csv(MERKLE_OUTPUT_FILE, index=False, header=False)
 
     # Print confirmation and summary information
     print(f"Merged data saved to {TOTAL_OUTPUT_FILE}")
