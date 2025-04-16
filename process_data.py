@@ -39,23 +39,36 @@ def calculate_arma_allocations():
         - 50000-100000 points: 52500 tokens
         - 100000+ points: 85000 tokens
     """
+    print("--- Processing ARMA Campaign ---")
     # Read and clean data
     df = pd.read_csv(ARMA_FILE)
+    initial_count = len(df)
+    print(f"Initial addresses: {initial_count}")
 
     # Convert addresses to checksum format
     df["eoa"] = df["eoa"].apply(lambda x: Web3.to_checksum_address(x))
 
     # Filter out entries with less than 60 points
+    count_before_points_filter = len(df)
     df = df[df["points"] >= 60]
+    count_after_points_filter = len(df)
+    print(
+        f"Addresses after filtering points < 60: {count_after_points_filter} (dropped {count_before_points_filter - count_after_points_filter})"
+    )
 
     # Check for duplicates
     duplicates = df[df.duplicated(subset=["eoa"], keep=False)]
     if not duplicates.empty:
-        print("\nDuplicate addresses found in ARMA campaign:")
-        print(duplicates[["eoa", "points"]].sort_values("eoa"))
+        print(f"Duplicate addresses found in ARMA campaign: {len(duplicates)}")
+        # print(duplicates[["eoa", "points"]].sort_values("eoa")) # Optional: uncomment to see duplicates
 
     # Remove duplicates keeping the first occurrence
+    count_before_duplicates = len(df)
     df = df.drop_duplicates(subset=["eoa"], keep="first")
+    count_after_duplicates = len(df)
+    print(
+        f"Addresses after removing duplicates: {count_after_duplicates} (dropped {count_before_duplicates - count_after_duplicates})"
+    )
 
     # Initialize Token column
     df["Token"] = 0
@@ -78,7 +91,8 @@ def calculate_arma_allocations():
     df = df[["Address", "Token"]]
 
     # Display total tokens
-    print(f"\nARMA Campaign Total Tokens: {df['Token'].sum():,.2f}")
+    print(f"ARMA Campaign Final Count: {len(df)}")
+    print(f"ARMA Campaign Total Tokens: {df['Token'].sum():,.2f}")
     print(f"ARMA Campaign Total Tokens: {df['Token'].sum() / TOTAL_SUPPLY:.2%}")
     # Save the processed allocation data
     df.to_csv(ARMA_OUTPUT_FILE, index=False)
@@ -95,29 +109,50 @@ def calculate_community_allocations():
     - Allocate 385 tokens for participants with exactly 300 points
     - Save results to COMMUNITY_OUTPUT_FILE
     """
+    print("--- Processing Community Campaign ---")
     # Read input data
     df = pd.read_csv(COMMUNITY_FILE)
     df_arma = pd.read_csv(ARMA_FILE)
+    initial_count = len(df)
+    print(f"Initial addresses: {initial_count}")
 
     # Convert addresses to checksum format
     df["eoa"] = df["eoa"].apply(lambda x: Web3.to_checksum_address(x))
     df_arma["eoa"] = df_arma["eoa"].apply(lambda x: Web3.to_checksum_address(x))
 
     # Filter marketing addresses that exist in ARMA data
+    count_before_arma_filter = len(df)
     filtered_df = df[df["eoa"].isin(df_arma["eoa"])].copy()
+    count_after_arma_filter = len(filtered_df)
+    print(
+        f"Addresses after filtering for existence in ARMA: {count_after_arma_filter} (dropped {count_before_arma_filter - count_after_arma_filter})"
+    )
 
     # Filter for participants with at least 100 points
-    filtered_df = filtered_df[filtered_df["points"] > 100]
+    count_before_points_filter = len(filtered_df)
+    filtered_df = filtered_df[filtered_df["points"] >= 100]
+    count_after_points_filter = len(filtered_df)
+    print(
+        f"Addresses after filtering points <= 100: {count_after_points_filter} (dropped {count_before_points_filter - count_after_points_filter})"
+    )
+
+    # Initialize Token column to 0 for all remaining participants
+    filtered_df["Token"] = 0
 
     # Set token allocation for 300 points participants
     filtered_df.loc[filtered_df["points"] == 300, "Token"] = 385
+    # Optional: Add a check for NaNs if needed
+    # nan_token_count = filtered_df['Token'].isna().sum()
+    # if nan_token_count > 0:
+    #     print(f"Warning: {nan_token_count} addresses have NaN token values after allocation.")
 
     # Clean up and standardize column names
     filtered_df.rename(columns={"eoa": "Address"}, inplace=True)
     filtered_df = filtered_df[["Address", "Token"]]
 
     # Display total tokens
-    print(f"\nCommunity Campaign Total Tokens: {filtered_df['Token'].sum():,.2f}")
+    print(f"Community Campaign Final Count: {len(filtered_df)}")
+    print(f"Community Campaign Total Tokens: {filtered_df['Token'].sum():,.2f}")
     print(
         f"Community Campaign Total Tokens: {filtered_df['Token'].sum() / TOTAL_SUPPLY:.3%}"
     )
@@ -134,21 +169,40 @@ def calculate_layer3_allocations():
     Methodology:
     - Equal distribution model where all qualifying participants receive the same allocation
     - Each participant receives a fixed amount of 180 tokens
+    - Filter addresses to only include those present in the ARMA leaderboard
     """
+    print("--- Processing Layer3 Campaign ---")
     # Read and clean data
     df = pd.read_csv(LAYER3_FILE)
+    df_arma = pd.read_csv(ARMA_FILE)
+    initial_count = len(df)
+    print(f"Initial addresses: {initial_count}")
 
     # Convert addresses to checksum format
     df["UserAddress"] = df["UserAddress"].apply(lambda x: Web3.to_checksum_address(x))
+    df_arma["eoa"] = df_arma["eoa"].apply(lambda x: Web3.to_checksum_address(x))
+
+    # Filter Layer3 addresses that exist in ARMA data
+    count_before_arma_filter = len(df)
+    df = df[df["UserAddress"].isin(df_arma["eoa"])].copy()
+    count_after_arma_filter = len(df)
+    print(
+        f"Addresses after filtering for existence in ARMA: {count_after_arma_filter} (dropped {count_before_arma_filter - count_after_arma_filter})"
+    )
 
     # Check for duplicates
     duplicates = df[df.duplicated(subset=["UserAddress"], keep=False)]
     if not duplicates.empty:
-        print("\nDuplicate addresses found in Layer3 campaign:")
-        print(duplicates[["UserAddress", "Quest"]].sort_values("UserAddress"))
+        print(f"Duplicate addresses found in Layer3 campaign: {len(duplicates)}")
+        # print(duplicates[["UserAddress", "Quest"]].sort_values("UserAddress")) # Optional: uncomment to see duplicates
 
     # Remove duplicates keeping the first occurrence
+    count_before_duplicates = len(df)
     df = df.drop_duplicates(subset=["UserAddress"], keep="first")
+    count_after_duplicates = len(df)
+    print(
+        f"Addresses after removing duplicates: {count_after_duplicates} (dropped {count_before_duplicates - count_after_duplicates})"
+    )
 
     # Remove unnecessary columns and standardize column names
     df.drop("Quest", axis=1, inplace=True)
@@ -158,7 +212,8 @@ def calculate_layer3_allocations():
     df["Token"] = SOCIALS_ALLOCATION
 
     # Display total tokens
-    print(f"\nLayer3 Campaign Total Tokens: {df['Token'].sum():,.2f}")
+    print(f"Layer3 Campaign Final Count: {len(df)}")
+    print(f"Layer3 Campaign Total Tokens: {df['Token'].sum():,.2f}")
     print(f"Layer3 Campaign Total Tokens: {df['Token'].sum() / TOTAL_SUPPLY:.2%}")
 
     # Save the processed allocation data
@@ -174,8 +229,11 @@ def calculate_galxe_allocations():
     - Filters for participants with at least 160 points
     - Each participant receives a fixed amount of 180 tokens
     """
+    print("--- Processing Galxe Campaign ---")
     # Read and clean data
     df = pd.read_csv(GALXE_FILE)
+    initial_count = len(df)
+    print(f"Initial addresses: {initial_count}")
 
     # Convert addresses to checksum format
     df["Wallet_20_Address"] = df["Wallet_20_Address"].apply(
@@ -185,16 +243,24 @@ def calculate_galxe_allocations():
     # Check for duplicates
     duplicates = df[df.duplicated(subset=["Wallet_20_Address"], keep=False)]
     if not duplicates.empty:
-        print("\nDuplicate addresses found in Galxe campaign:")
-        print(
-            duplicates[["Wallet_20_Address", "Point"]].sort_values("Wallet_20_Address")
-        )
+        print(f"Duplicate addresses found in Galxe campaign: {len(duplicates)}")
+        # print(duplicates[["Wallet_20_Address", "Point"]].sort_values("Wallet_20_Address")) # Optional
 
     # Remove duplicates keeping the first occurrence
+    count_before_duplicates = len(df)
     df = df.drop_duplicates(subset=["Wallet_20_Address"], keep="first")
+    count_after_duplicates = len(df)
+    print(
+        f"Addresses after removing duplicates: {count_after_duplicates} (dropped {count_before_duplicates - count_after_duplicates})"
+    )
 
     # Filter for participants with at least 160 points
+    count_before_points_filter = len(df)
     df = df[df["Point"] >= 160]
+    count_after_points_filter = len(df)
+    print(
+        f"Addresses after filtering points < 160: {count_after_points_filter} (dropped {count_before_points_filter - count_after_points_filter})"
+    )
 
     # Fixed allocation of 180 tokens per participant
     df["Token"] = SOCIALS_ALLOCATION
@@ -204,7 +270,8 @@ def calculate_galxe_allocations():
     df.drop(["Address_20_Type", "Point", "Ranking"], axis=1, inplace=True)
 
     # Display total tokens
-    print(f"\nGalxe Campaign Total Tokens: {df['Token'].sum():,.2f}")
+    print(f"Galxe Campaign Final Count: {len(df)}")
+    print(f"Galxe Campaign Total Tokens: {df['Token'].sum():,.2f}")
     print(f"Galxe Campaign Total Tokens: {df['Token'].sum() / TOTAL_SUPPLY:.2%}")
 
     # Save the processed allocation data
@@ -223,11 +290,19 @@ def calculate_megaphone_allocations():
     - Filter participants with more than 205 points
     - Each participant receives a fixed amount of 180 tokens
     """
+    print("--- Processing Megaphone Campaign ---")
     # Read and clean data
     df = pd.read_csv(MEGAPHONE_CAMPAIGN_FILE)
+    initial_count = len(df)
+    print(f"Initial addresses: {initial_count}")
 
     # Remove rows with NaN wallet addresses
+    count_before_nan_drop = len(df)
     df = df.dropna(subset=["walletAddress"])
+    count_after_nan_drop = len(df)
+    print(
+        f"Addresses after dropping NaN walletAddress: {count_after_nan_drop} (dropped {count_before_nan_drop - count_after_nan_drop})"
+    )
 
     # Convert wallet addresses to string and remove any whitespace
     df["walletAddress"] = df["walletAddress"].astype(str).str.strip()
@@ -240,11 +315,16 @@ def calculate_megaphone_allocations():
     # Check for duplicates
     duplicates = df[df.duplicated(subset=["walletAddress"], keep=False)]
     if not duplicates.empty:
-        print("\nDuplicate addresses found in Megaphone campaign:")
-        print(duplicates[["walletAddress", "totalPoints"]].sort_values("walletAddress"))
+        print(f"Duplicate addresses found in Megaphone campaign: {len(duplicates)}")
+        # print(duplicates[["walletAddress", "totalPoints"]].sort_values("walletAddress")) # Optional
 
     # Remove duplicates keeping the first occurrence
+    count_before_duplicates = len(df)
     df = df.drop_duplicates(subset=["walletAddress"], keep="first")
+    count_after_duplicates = len(df)
+    print(
+        f"Addresses after removing duplicates: {count_after_duplicates} (dropped {count_before_duplicates - count_after_duplicates})"
+    )
 
     # Subtract referralPoints from totalPoints
     df["totalPoints"] = df["totalPoints"] - df["referralPoints"]
@@ -256,7 +336,12 @@ def calculate_megaphone_allocations():
     df["totalPoints"] = df["totalPoints"] + df["referralPoints"]
 
     # Filter for participants with more than 205 points
+    count_before_points_filter = len(df)
     df = df[df["totalPoints"] > 205]
+    count_after_points_filter = len(df)
+    print(
+        f"Addresses after filtering points <= 205: {count_after_points_filter} (dropped {count_before_points_filter - count_after_points_filter})"
+    )
 
     # Fixed allocation of 180 tokens per participant
     df["token"] = SOCIALS_ALLOCATION
@@ -266,7 +351,8 @@ def calculate_megaphone_allocations():
     df = df[["Address", "Token"]]
 
     # Display total tokens
-    print(f"\nMegaphone Campaign Total Tokens: {df['Token'].sum():,.2f}")
+    print(f"Megaphone Campaign Final Count: {len(df)}")
+    print(f"Megaphone Campaign Total Tokens: {df['Token'].sum():,.2f}")
     print(f"Megaphone Campaign Total Tokens: {df['Token'].sum() / TOTAL_SUPPLY:.2%}")
     # Save the processed allocation data
     df.to_csv(MEGAPHONE_OUTPUT_FILE, index=False)
