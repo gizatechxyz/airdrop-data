@@ -4,7 +4,7 @@ import json
 
 # Output files from processing scripts
 TOTAL_ALLOCATIONS_FILE = "./processed/total_allocations.csv"
-FINAL_PROOF = "./final_proof.json"
+FINAL_PROOF = "./airdrop_proof/proof.json"
 TOTAL_SUPPLY = 1_000_000_000
 
 # Read the total allocations file
