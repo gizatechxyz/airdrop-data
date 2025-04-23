@@ -62,6 +62,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "eth-utils" },
     { name = "matplotlib" },
+    { name = "multiproof" },
     { name = "pandas" },
     { name = "web3" },
 ]
@@ -70,6 +71,7 @@ dependencies = [
 requires-dist = [
     { name = "eth-utils", specifier = ">=5.2.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
+    { name = "multiproof", specifier = ">=0.1.10" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "web3", specifier = ">=7.10.0" },
 ]
@@ -507,6 +509,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/86/cc42cfa9b85b7d174948a17f828ebcacb0247e727fbedf06506ba93387ef/multidict-6.3.2-cp313-cp313t-win32.whl", hash = "sha256:420e5144a5f598dad8db3128f1695cd42a38a0026c2991091dab91697832f8cc", size = 41908 },
     { url = "https://files.pythonhosted.org/packages/2a/36/5c015523a7650fb5c55380d1c779b938379bd091968ee822d719e4264ab7/multidict-6.3.2-cp313-cp313t-win_amd64.whl", hash = "sha256:875faded2861c7af2682c67088e6313fec35ede811e071c96d36b081873cea14", size = 45635 },
     { url = "https://files.pythonhosted.org/packages/aa/c1/7832c95a50641148b567b5366dd3354489950dcfd01c8fc28472bec63b9a/multidict-6.3.2-py3-none-any.whl", hash = "sha256:71409d4579f716217f23be2f5e7afca5ca926aaeb398aa11b72d793bff637a1f", size = 10347 },
+]
+
+[[package]]
+name = "multiproof"
+version = "0.1.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "eth-abi" },
+    { name = "eth-hash", extra = ["pycryptodome"] },
+    { name = "eth-utils" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/c7/2b6910d86b690fc2bdc02a74cf87cf31bfdcee6811c5e9d0bc31e83e9bb9/multiproof-0.1.10.tar.gz", hash = "sha256:da95a3d81cfde3636845deb6aff1d3bea59ac60d0eb85c1ba18fdcdf779e6ffd", size = 15615 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/3b/3d912d8c6e52ad49dfead443d9556282feeb6410a0025d2144a9c68ef28b/multiproof-0.1.10-py3-none-any.whl", hash = "sha256:10ce1bb723a89de7f2f90b801589ba012c68631b786041d96691f31a0f6521c2", size = 13437 },
 ]
 
 [[package]]
